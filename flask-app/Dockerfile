@@ -1,26 +1,29 @@
-###########################################
-# Dockerfile for a simple python 
-
-
-# Working from Python version 3.9
+# Use an official Python runtime as a parent image based on Alpine
 FROM python:3.9-alpine
 
-# setting the working directory inside the container to /code
+# Set the working directory in the container to /code
 WORKDIR /code
 
-RUN apk add gcc musl-dev python3-dev libffi-dev openssl-dev
+# Install system dependencies required for mysqlclient and other packages
+RUN apk update && apk add --no-cache \
+    gcc \
+    musl-dev \
+    mariadb-dev \
+    python3-dev \
+    libffi-dev \
+    openssl-dev
 
-# copying the requirements.txt file from the host system to
-# inside the container
-COPY src/requirements.txt requirements.txt
+# Copy the requirements.txt file from the host system to inside the container
+COPY src/requirements.txt .
 
-# install requirements inside the container using pip
-RUN pip install -r requirements.txt
+# Install Python dependencies
+RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# expose port 4000 from the container
+# Expose port 4000 from the container
 EXPOSE 4000
 
-# tell the container to run the flask application
-# CMD ["python", "src/app.py"]
-CMD ["python", "app.py"]
+# Copy the rest of the application
+COPY src/ .
 
+# Command to run the application
+CMD ["python", "app.py"]
