@@ -6,4 +6,5 @@ werkzeug==2.0.3
 flask-restful==0.3.9
 flask-login==0.6.2
 Flask-MySQLdb
+Flask-SQLAlchemy
 cryptography==38.0.1
