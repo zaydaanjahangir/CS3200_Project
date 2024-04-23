@@ -1,7 +1,7 @@
-# Some set up for the application
+# Some set up for the application 
 
 from flask import Flask
-from flask_mysqldb import MySQL
+from flaskext.mysql import MySQL
 
 # create a MySQL object that we will use in other parts of the API
 db = MySQL()
@@ -15,28 +15,33 @@ def create_app():
     app.config['SECRET_KEY'] = 'someCrazyS3cR3T!Key.!'
 
     # these are for the DB object to be able to connect to MySQL. 
-    app.config['MYSQL_USER'] = 'root'
-    app.config['MYSQL_PASSWORD'] = open('/secrets/db_password.txt').readline().strip()
-    app.config['MYSQL_HOST'] = 'db'
-    app.config['MYSQL_PORT'] = 3306
-    app.config['MYSQL_DB'] = 'northwind'  # Change this to your DB name
+    app.config['MYSQL_DATABASE_USER'] = 'root'
+    app.config['MYSQL_DATABASE_PASSWORD'] = open('/secrets/db_root_password.txt').readline().strip()
+    app.config['MYSQL_DATABASE_HOST'] = 'db'
+    app.config['MYSQL_DATABASE_PORT'] = 3306
+    app.config['MYSQL_DATABASE_DB'] = 'CinemaWorld'  # Change this to your DB name
 
     # Initialize the database object with the settings above. 
     db.init_app(app)
     
-    # Add a default route
+    # Add the default route
+    # Can be accessed from a web browser
+    # http://ip_address:port/
+    # Example: localhost:8001
     @app.route("/")
     def welcome():
         return "<h1>Welcome to the 3200 boilerplate app</h1>"
 
-    # Import the various routes
-    from src.views import views
-    from src.customers.customers import customers
-    from src.products.products  import products
+    # Import the various Beluprint Objects
+    from src.bookings.bookings  import bookings
+    from src.posts.posts  import posts
+    from src.users.users  import users
 
-    # Register the routes that we just imported so they can be properly handled
-    app.register_blueprint(views,       url_prefix='/v')
-    app.register_blueprint(customers,   url_prefix='/c')
-    app.register_blueprint(products,    url_prefix='/p')
+    # Register the routes from each Blueprint with the app object
+    # and give a url prefix to each
+    app.register_blueprint(bookings,    url_prefix='/b')
+    app.register_blueprint(users,    url_prefix='/u')
+    app.register_blueprint(posts,    url_prefix='/p')
 
+    # Don't forget to return the app object
     return app
