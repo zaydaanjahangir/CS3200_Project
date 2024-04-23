@@ -22,9 +22,14 @@ def delete_user(user_id):
 @users.route('/users/<int:user_id>', methods=['GET'])
 def get_user(user_id):
     cursor = db.get_db().cursor()
-    cursor.execute(f"SELECT * FROM User WHERE UserID = {user_id}")
-    result = cursor.fetchone()
-    return jsonify(result), 200 if result else (jsonify({"error": "User not found"}), 404)
+    cursor.execute("SELECT * FROM User WHERE UserID = %s", (user_id,))
+    row = cursor.fetchone()
+    if row:
+        columns = [column[0] for column in cursor.description]
+        result = dict(zip(columns, row))
+        return jsonify([result]), 200  
+    else:
+        return jsonify({"error": "User not found"}), 404
 
 @users.route('/users/<int:user_id>/preferences', methods=['PUT'])
 def update_preferences(user_id):
