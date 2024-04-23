@@ -1,56 +1,35 @@
 from flask import Blueprint, request, jsonify
-from models import db, Booking
+from src import db
 
-bookings_bp = Blueprint('bookings', __name__)
+bookings = Blueprint('bookings', __name__)
 
-@bookings_bp.route('/bookings', methods=['POST'])
-def make_booking():
+@bookings.route('/bookings', methods=['POST'])
+def new_booking():
     data = request.json
-    new_booking = Booking(
-        UserID=data['UserID'],
-        ShowingID=data['ShowingID'],
-        SeatID=data['SeatID'],
-        Price=data['Price']
-    )
-    db.session.add(new_booking)
-    db.session.commit()
-    return jsonify(new_booking.to_dict()), 201
+    cursor = db.get_db().cursor()
+    query = f"INSERT INTO bookings (UserID, ShowingID, SeatID, Price) VALUES ({data['UserID']}, {data['ShowingID']}, {data['SeatID']}, {data['Price']})"
+    cursor.execute(query)
+    db.get_db().commit()
+    return jsonify({"success": "Booking created successfully"}), 201
 
-@bookings_bp.route('/bookings/<int:booking_id>', methods=['GET'])
+@bookings.route('/bookings/<int:booking_id>', methods=['DELETE'])
+def delete_booking(booking_id):
+    cursor = db.get_db().cursor()
+    cursor.execute(f"DELETE FROM bookings WHERE BookingID = {booking_id}")
+    db.get_db().commit()
+    return jsonify({"success": "Booking deleted successfully"}), 204
+
+@bookings.route('/bookings/<int:booking_id>', methods=['GET'])
 def get_booking(booking_id):
-    booking = Booking.query.get(booking_id)
-    if booking:
-        return jsonify(booking.to_dict()), 200
-    else:
-        return jsonify({"error": "Booking not found"}), 404
+    cursor = db.get_db().cursor()
+    cursor.execute(f"SELECT * FROM bookings WHERE BookingID = {booking_id}")
+    result = cursor.fetchone()
+    return jsonify(result), 200 if result else (jsonify({"error": "Booking not found"}), 404)
 
-@bookings_bp.route('/bookings/<int:booking_id>', methods=['PUT'])
-def update_booking(booking_id):
-    booking = Booking.query.get(booking_id)
-    if booking:
-        data = request.json
-        booking.SeatID = data.get('SeatID', booking.SeatID)
-        booking.Price = data.get('Price', booking.Price)
-        db.session.commit()
-        return jsonify(booking.to_dict()), 200
-    else:
-        return jsonify({"error": "Booking not found"}), 404
-
-@bookings_bp.route('/bookings/<int:booking_id>', methods=['DELETE'])
-def cancel_booking(booking_id):
-    booking = Booking.query.get(booking_id)
-    if booking:
-        db.session.delete(booking)
-        db.session.commit()
-        return jsonify({"success": "Booking cancelled"}), 204
-    else:
-        return jsonify({"error": "Booking not found"}), 404
-
-
-@bookings_bp.route('/bookings/user/<int:user_id>', methods=['GET'])
-def get_bookings_for_user(user_id):
-    bookings = Booking.query.filter_by(UserID=user_id).all()
-    if bookings:
-        return jsonify([booking.to_dict() for booking in bookings]), 200
-    else:
-        return jsonify({"error": "No bookings found for this user"}), 404
+@bookings.route('/bookings/<int:booking_id>/showing', methods=['PUT'])
+def change_showing(booking_id):
+    showing_id = request.json.get('ShowingID')
+    cursor = db.get_db().cursor()
+    cursor.execute(f"UPDATE bookings SET ShowingID = {showing_id} WHERE BookingID = {booking_id}")
+    db.get_db().commit()
+    return jsonify({"success": "Showing updated successfully"}), 200
